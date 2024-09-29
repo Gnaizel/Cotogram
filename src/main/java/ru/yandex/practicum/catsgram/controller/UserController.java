@@ -1,9 +1,11 @@
 package ru.yandex.practicum.catsgram.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.catsgram.exception.ConditionsNotMetException;
 import ru.yandex.practicum.catsgram.exception.DuplicatedDataException;
 import ru.yandex.practicum.catsgram.model.User;
+import ru.yandex.practicum.catsgram.service.UserService;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -14,64 +16,30 @@ import java.util.Set;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final UserService userService;
 
-    private final Map<Long, User> users = new HashMap<>();
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public Set<User> getUsers() {
-        return new HashSet<>(users.values());
+        return userService.getUsers();
+    }
+
+    @GetMapping("/{id}")
+    public User findPostForId(@PathVariable Long id) {
+        return userService.findUserForId(id);
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) {
-        if (user.getEmail().isBlank()) throw new ConditionsNotMetException("Имейл должен быть указан");
-
-        if (users.containsValue(user)) {
-            throw new DuplicatedDataException("Этот имейл уже используется");
-        }
-
-        if (user.getPassword() == null || user.getUsername() == null) {
-            users.replace(user.getId(), user);
-        }
-
-        user.setId(getNextId());
-        user.setRegistrationDate(Instant.now());
-
-        users.put(user.getId(), user);
-        return user;
+        return userService.createUser(user);
     }
 
     @PutMapping
     public User redactUser(@RequestBody User user) {
-        if (!users.containsKey(user.getId())) {
-            throw new ConditionsNotMetException("Id должен быть указан");
-        }
-
-        if (users.containsValue(user)) {
-            throw new DuplicatedDataException("Этот имейл уже используется");
-        }
-
-        User existingUser = users.get(user.getId());
-
-        if (user.getEmail() != null) {
-            existingUser.setEmail(user.getEmail());
-        }
-        if (user.getPassword() != null) {
-            existingUser.setPassword(user.getPassword());
-        }
-        if (user.getUsername() != null) {
-            existingUser.setUsername(user.getUsername());
-        }
-        users.replace(existingUser.getId(), existingUser);
-        return existingUser;
-    }
-
-    private Long getNextId() {
-        long counterMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++counterMaxId;
+        return userService.redactUser(user);
     }
 }

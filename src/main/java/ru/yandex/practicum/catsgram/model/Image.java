@@ -1,12 +1,10 @@
 package ru.yandex.practicum.catsgram.model;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Value;
 
-@Data
-@Getter
-@Setter
+@Value
+@Builder(toBuilder = true)
 public class Image {
     Long id;
     long postId;
